@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Profile table maps to Supabase auth.users via id (UUID)
+model Profile {
+  id            String   @id @default(uuid())
+  full_name     String
+  email         String   @unique
+  matric_number String?  @unique
+  avatar_url    String?
+  role          String   @default("STUDENT") // STUDENT, STAFF, ADMIN
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  claims        Claim[]
+  items         Item[]   // Items reported by this user
+
+  @@map("profiles")
+}
+
+model Category {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+  items       Item[]
+
+  @@map("categories")
+}
+
+model Location {
+  id       String @id @default(uuid())
+  name     String @unique
+  landmark String?
+  items    Item[]
+
+  @@map("locations")
+}
+
+model Tag {
+  id    String     @id @default(uuid())
+  name  String     @unique
+  items ItemTag[]
+
+  @@map("tags")
+}
+
+model Item {
+  id                   String    @id @default(uuid())
+  type                 String    // LOST, FOUND
+  title                String
+  description_public   String
+  description_private  String?
+  status               String    @default("OPEN") // OPEN, MATCHED, CLOSED, EXPIRED
+  image_url            String?
+  dateLostOrFound      DateTime? @map("date_lost_or_found")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // Relations for matching logic
+  categoryId           String    @map("category_id")
+  category             Category  @relation(fields: [categoryId], references: [id])
+
+  locationId           String    @map("location_id")
+  location             Location  @relation(fields: [locationId], references: [id])
+
+  // Reporter relation
+  reporterId           String    @map("reporter_id")
+  reporter             Profile   @relation(fields: [reporterId], references: [id])
+
+  tags                 ItemTag[]
+  claims               Claim[]
+  matchesAsLost        Match[]   @relation("LostItem")
+  matchesAsFound       Match[]   @relation("FoundItem")
+
+  @@index([type, status])
+  @@index([categoryId])
+  @@index([locationId])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@map("items")
+}
+
+model ItemTag {
+  itemId String @map("item_id")
+  tagId  String @map("tag_id")
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@map("item_tags")
+}
+
+model Match {
+  id          String   @id @default(uuid())
+  lostItemId  String   @map("lost_item_id")
+  lostItem    Item     @relation("LostItem", fields: [lostItemId], references: [id])
+  foundItemId String   @map("found_item_id")
+  foundItem   Item     @relation("FoundItem", fields: [foundItemId], references: [id])
+  score       Float    // AI matching score (0-1)
+  status      String   @default("PENDING") // PENDING, CONFIRMED, REJECTED
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([lostItemId, foundItemId])
+  @@map("matches")
+}
+
+model Claim {
+  id                String   @id @default(uuid())
+  item              Item     @relation(fields: [itemId], references: [id])
+  itemId            String   @map("item_id")
+  seeker            Profile  @relation(fields: [seekerId], references: [id])
+  seekerId          String   @map("seeker_id")
+  verificationText  String   @map("verification_text")
+  proofUrl          String?  @map("proof_url")
+  status            String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([itemId])
+  @@index([seekerId])
+  @@map("claims")
+}
