@@ -2,8 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Debug env vars
-console.log('ENV CHECK - URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING');
-console.log('ENV CHECK - SERVICE KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET (length: ' + process.env.SUPABASE_SERVICE_ROLE_KEY.length + ')' : 'MISSING');
 
 // Service role client for admin operations (bypasses RLS)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -86,7 +84,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('Auth creation error:', authError);
       return NextResponse.json(
         { error: authError.message || 'Failed to create user' },
         { status: 400 }
@@ -101,7 +98,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Create profile using service role (bypasses RLS)
-    console.log('Creating profile for auth user ID:', authData.user.id);
     
     const now = new Date().toISOString();
     const profileData: any = {
@@ -124,13 +120,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
       
       // Attempt to clean up the auth user since profile creation failed
       try {
         await serviceClient.auth.admin.deleteUser(authData.user.id);
       } catch (cleanupError) {
-        console.error('Failed to cleanup auth user:', cleanupError);
       }
 
       return NextResponse.json(
@@ -140,7 +134,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!profileResult) {
-      console.error('Profile insert returned no data');
       return NextResponse.json(
         { error: 'Profile creation failed - no data returned' },
         { status: 500 }
@@ -166,12 +159,8 @@ export async function POST(request: NextRequest) {
       }
       
       const verifyData = await verifyResponse.json();
-      console.log('Verification REST API result:', verifyData);
       
       if (!verifyData || verifyData.length === 0) {
-        console.error('Profile verification failed - no data returned');
-        console.error('Profile data sent:', profileData);
-        console.error('User ID:', authData.user.id);
         
         return NextResponse.json(
           { error: 'Profile creation failed - verification failed' },
@@ -179,15 +168,12 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      console.log('Profile verified in database:', verifyData[0]);
     } catch (verifyErr) {
-      console.error('Profile verification error:', verifyErr);
       return NextResponse.json(
         { error: 'Profile creation failed - verification error' },
         { status: 500 }
       );
     }
-    console.log('User can now login with ID:', authData.user.id);
 
     return NextResponse.json({
       success: true,
@@ -199,7 +185,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Signup API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

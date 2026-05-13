@@ -103,33 +103,28 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     setShowImageModal(true);
-    console.log('🔓 Modal opened');
   };
   
   const closeModal = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     setShowImageModal(false);
-    console.log('🔒 Modal closed');
   };
 
   // Generate signed URLs for images - prevent concurrent requests
   useEffect(() => {
     if (proofUrls.length > 0 && showImageModal && !signedUrlGenerationRef.current) {
-      console.log('🔄 Starting signed URL generation for', proofUrls.length, 'files');
       signedUrlGenerationRef.current = true;
       
       // Sequential generation to prevent lock stealing
       const generateSequentially = async () => {
         for (let i = 0; i < proofUrls.length; i++) {
           const url = proofUrls[i];
-          console.log(`🔍 Processing URL ${i + 1}/${proofUrls.length}`);
           await generateSignedUrl(url);
           // Small delay between requests to prevent lock conflicts
           await new Promise(resolve => setTimeout(resolve, 300));
         }
         signedUrlGenerationRef.current = false;
-        console.log('✅ All signed URLs generated sequentially');
       };
       
       generateSequentially();
@@ -144,7 +139,6 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
       const bucketIndex = pathParts.indexOf('claim-proofs');
       const filePath = pathParts.slice(bucketIndex + 1).join('/'); // Skip the bucket name
       
-      console.log('🔍 Getting signed URL for path:', filePath);
       
       // Add retry logic for lock stealing
       let retryCount = 0;
@@ -157,19 +151,16 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
             .createSignedUrl(filePath, 3600); // 1 hour expiry
           
           if (error) {
-            console.error(`❌ Error creating signed URL (attempt ${retryCount + 1}):`, error);
             if (retryCount === maxRetries - 1) {
               // Final fallback to original URL
               setSignedUrls(prev => ({ ...prev, [fileUrl]: fileUrl }));
               return;
             }
           } else {
-            console.log('✅ Signed URL generated:', data.signedUrl);
             setSignedUrls(prev => ({ ...prev, [fileUrl]: data.signedUrl }));
             return;
           }
         } catch (requestError) {
-          console.error(`❌ Request error (attempt ${retryCount + 1}):`, requestError);
           if (retryCount === maxRetries - 1) {
             // Final fallback to original URL
             setSignedUrls(prev => ({ ...prev, [fileUrl]: fileUrl }));
@@ -182,7 +173,6 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
         retryCount++;
       }
     } catch (err) {
-      console.error('❌ Critical error generating signed URL:', err);
       // Fallback to original URL
       setSignedUrls(prev => ({ ...prev, [fileUrl]: fileUrl }));
     }
@@ -196,7 +186,6 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
     
     // Prevent navigation interference
     if (navigationRef.current) {
-      console.log('⚠️ Download already in progress');
       return;
     }
     
@@ -204,13 +193,11 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
     setIsDownloading(true);
     
     try {
-      console.log('🔄 Starting concurrent downloads for', proofUrls.length, 'files');
       
       // Download all files concurrently with isolated execution
-      const downloadPromises = proofUrls.map(async (url, index) => {
+      const downloadPromises = proofUrls.map(async (url: string, index: number) => {
         try {
           const signedUrl = signedUrls[url] || url;
-          console.log(`📥 Downloading file ${index + 1}:`, signedUrl);
           
           // Use iframe isolation to prevent navigation interference
           return new Promise<void>((resolve, reject) => {
@@ -251,7 +238,6 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
             }, 50);
           });
         } catch (error) {
-          console.error(`❌ Failed to download file ${index + 1}:`, error);
           throw error;
         }
       });
@@ -262,16 +248,13 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
       
-      console.log(`✅ Downloads completed: ${successful} successful, ${failed} failed`);
       
       if (failed > 0) {
         alert(`${successful} files downloaded successfully. ${failed} files failed.`);
       } else {
-        console.log('✅ All files downloaded successfully');
       }
       
     } catch (error) {
-      console.error('❌ Error in download process:', error);
       alert('Failed to download files. Please try again.');
     } finally {
       setIsDownloading(false);
@@ -508,7 +491,7 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
                     <div className="space-y-4">
                       {/* Image Grid */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {proofUrls.map((url, index) => (
+                        {proofUrls.map((url: string, index: number) => (
                           <div key={index} className="relative group">
                             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden aspect-square">
                               {signedUrls[url] ? (
@@ -517,11 +500,9 @@ export default function ClaimDetailClient({ claim }: ClaimDetailClientProps) {
                                   alt={`Proof document ${index + 1}`}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    console.error('❌ Image failed to load:', signedUrls[url]);
                                     e.currentTarget.style.display = 'none';
                                   }}
                                   onLoad={() => {
-                                    console.log('✅ Image loaded successfully:', signedUrls[url]);
                                   }}
                                 />
                               ) : (

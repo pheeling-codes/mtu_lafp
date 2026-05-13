@@ -134,14 +134,8 @@ export default function VerifyClaimClient({ item, userId }: VerifyClaimClientPro
   };
 
   const handleSubmit = async () => {
-    console.log('🚀 Starting claim submission');
-    console.log('📝 Hidden details:', hiddenDetails);
-    console.log('📁 Uploaded files:', uploadedFiles);
-    console.log('👤 User ID:', userId);
-    console.log('🆔 Item ID:', item.id);
     
     if (!hiddenDetails.trim()) {
-      console.log('❌ Hidden details validation failed');
       setSubmitError('Please provide hidden details to verify your ownership.');
       return;
     }
@@ -151,27 +145,21 @@ export default function VerifyClaimClient({ item, userId }: VerifyClaimClientPro
 
     try {
       let proofUrl: string | null = null;
-      console.log('✅ Validation passed, starting upload process...');
 
       // Upload files if present
       if (uploadedFiles.length > 0) {
-        console.log('📤 Starting file upload process for', uploadedFiles.length, 'files');
         
         const uploadPromises = uploadedFiles.map(async (file, index) => {
-          console.log(`📁 Uploading file ${index + 1}:`, file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
           
           const fileExt = file.name.split('.').pop();
           const fileName = `${userId}/${item.id}/${Date.now()}-${index}.${fileExt}`;
-          console.log('📂 Generated file path:', fileName);
           
           const { error: uploadError, data: uploadData } = await supabaseClient.storage
             .from('claim-proofs')
             .upload(fileName, file);
 
-          console.log('📤 Upload result:', { uploadError, uploadData });
 
           if (uploadError) {
-            console.error('❌ Upload error for', file.name, ':', uploadError);
             throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
           }
 
@@ -179,30 +167,17 @@ export default function VerifyClaimClient({ item, userId }: VerifyClaimClientPro
             .from('claim-proofs')
             .getPublicUrl(fileName);
           
-          console.log('🔗 Generated URL:', urlData.publicUrl);
           return urlData.publicUrl;
         });
 
         const uploadedUrls = await Promise.all(uploadPromises);
-        console.log('✅ All files uploaded:', uploadedUrls);
         proofUrl = JSON.stringify(uploadedUrls); // Store all URLs as JSON string
       } else {
-        console.log('📁 No files to upload');
       }
 
       // Create claim record
       const claimId = generateUUID();
       const now = new Date().toISOString();
-      console.log('💾 Creating claim record with:', {
-        id: claimId,
-        seeker_id: userId,
-        item_id: item.id,
-        verification_text: hiddenDetails,
-        proof_url: proofUrl,
-        status: 'pending_review',
-        created_at: now,
-        updated_at: now
-      });
       
       const { error: claimError, data: claimData } = await (supabaseClient as any)
         .from('claims')
@@ -217,28 +192,20 @@ export default function VerifyClaimClient({ item, userId }: VerifyClaimClientPro
           updated_at: now
         });
 
-      console.log('💾 Claim insert result:', { claimError, claimData });
 
       if (claimError) {
-        console.error('❌ Claim creation error:', claimError);
         throw new Error(`Failed to submit claim: ${claimError.message}`);
       }
       
-      console.log('✅ Claim created successfully!');
 
       // Redirect to my claims
-      console.log('🔄 Redirecting to my-claims...');
       router.push('/my-claims');
     } catch (err) {
-      console.error('💥 Submit error:', err);
-      console.error('💥 Error type:', typeof err);
-      console.error('💥 Error message:', err instanceof Error ? err.message : String(err));
       
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
-      console.log('🏁 Submit process finished');
     }
   };
 

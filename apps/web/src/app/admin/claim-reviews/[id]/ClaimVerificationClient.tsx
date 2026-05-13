@@ -84,17 +84,6 @@ const parseProofUrls = (proofUrl: string | string[] | null): string[] => {
 
 // Helper function to convert Supabase URL to proxy URL
 const getProxyImageUrl = (claimId: string, originalUrl: string): string => {
-  console.log('getProxyImageUrl called with:', { claimId, originalUrl });
-  
-  // Log the exact original URL to debug protocol issue
-  console.log('Original URL analysis:', {
-    startsWithHttp: originalUrl.startsWith('http://'),
-    startsWithHttps: originalUrl.startsWith('https://'),
-    containsHttpProtocol: originalUrl.includes('http://'),
-    containsHttpsProtocol: originalUrl.includes('https://'),
-    fullUrl: originalUrl
-  });
-  
   // Fix missing https:// in URLs - handle all variations
   let fixedUrl = originalUrl;
   if (originalUrl.startsWith('http://')) {
@@ -103,46 +92,29 @@ const getProxyImageUrl = (claimId: string, originalUrl: string): string => {
     fixedUrl = 'https://' + originalUrl.substring(8); // Remove https:// and add https://
   }
   
-  console.log('URL after protocol fix:', { original: originalUrl, fixed: fixedUrl });
-  
   // For item images, use direct Supabase URL (they work)
   if (fixedUrl.includes('/item-images/')) {
-    console.log('Item image detected - returning direct URL');
     return fixedUrl;
   }
   
   // For proof images, keep claim-proofs as is (actual bucket name)
   if (fixedUrl.includes('/claims--proof/')) {
-    console.log('Proof image detected (claims--proof) - returning direct URL');
     return fixedUrl;
   }
   
   // For proof images with claim-proofs (actual bucket)
   if (fixedUrl.includes('/claim-proofs/')) {
-    console.log('Proof image detected (claim-proofs) - returning direct URL');
     return fixedUrl;
   }
-  
-  // Log exact URL structure for debugging
-  console.log('Final URL analysis:', {
-    original: originalUrl,
-    fixed: fixedUrl,
-    containsClaimsProof: fixedUrl.includes('/claims--proof/'),
-    containsClaimProofs: fixedUrl.includes('/claim-proofs/'),
-    containsClaimItem: fixedUrl.includes('/claim-item/'),
-    containsItemImages: fixedUrl.includes('/item-images/')
-  });
   
   // Extract path from Supabase storage URL
   const urlParts = originalUrl.split('/public/');
   if (urlParts.length < 2) {
-    console.log('URL does not contain /public/ - returning original:', originalUrl);
     return originalUrl;
   }
   
   const path = urlParts[1]; // Get everything after '/public/'
   const proxyUrl = `/api/admin/claims/${claimId}/proof/${path}`;
-  console.log('Generated proxy URL:', proxyUrl);
   return proxyUrl;
 };
 
@@ -169,22 +141,17 @@ export default function ClaimVerificationClient({ claim }: ClaimVerificationClie
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   const handleApprove = () => {
-    console.log('handleApprove called - setting modal to true');
     setShowApproveModal(true);
-    console.log('Modal state after set:', true);
   };
 
   const confirmApprove = async () => {
-    console.log('confirmApprove called - executing approve');
     setIsSubmitting(true);
     setShowApproveModal(false);
     try {
       const response = await fetch(`/api/admin/claims/${claim.id}/approve`, {
         method: 'POST',
       });
-      console.log('approve response:', response.status, response.ok);
       if (response.ok) {
-        console.log('approve successful - redirecting');
         router.push('/admin/claims');
       }
     } catch (error) {
@@ -194,21 +161,17 @@ export default function ClaimVerificationClient({ claim }: ClaimVerificationClie
   };
 
   const handleReject = async () => {
-    console.log('handleReject called - showing reject modal');
     setShowRejectModal(true);
   };
 
   const confirmReject = async () => {
-    console.log('confirmReject called - executing reject');
     setIsSubmitting(true);
     setShowRejectModal(false);
     try {
       const response = await fetch(`/api/admin/claims/${claim.id}/reject`, {
         method: 'POST',
       });
-      console.log('reject response:', response.status, response.ok);
       if (response.ok) {
-        console.log('reject successful - redirecting');
         router.push('/admin/claims');
       }
     } catch (error) {
@@ -349,7 +312,6 @@ export default function ClaimVerificationClient({ claim }: ClaimVerificationClie
                               alt={`Proof of ownership ${index + 1}`}
                               className="w-32 h-32 object-cover rounded-lg"
                               onError={(e) => {
-                                console.error('Failed to load proof image:', proxyUrl);
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
@@ -401,7 +363,6 @@ export default function ClaimVerificationClient({ claim }: ClaimVerificationClie
                       alt={sanitizeString(claim.item.title)}
                       className="w-32 h-32 object-cover rounded-lg"
                       onError={(e) => {
-                        console.error('Failed to load item image:', claim.item.image_url);
                         e.currentTarget.style.display = 'none';
                       }}
                     />
