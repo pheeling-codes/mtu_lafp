@@ -1,0 +1,421 @@
+'use client';
+
+import { useAuth } from '@/components/AuthProvider';
+import { supabaseClient } from '@/utils/supabaseClient';
+import { useEffect, useState } from 'react';
+import { 
+  Search, 
+  PackageOpen, 
+  GitPullRequest, 
+  FileText,
+  ArrowRight,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  MapPin,
+  Sparkles
+} from 'lucide-react';
+import Link from 'next/link';
+
+// Debug component to diagnose auth issues
+function AuthDebugPanel() {
+  const { user, isLoading, role } = useAuth();
+  const [cookies, setCookies] = useState<string>('');
+  
+  useEffect(() => {
+    setCookies(document.cookie);
+  }, []);
+  
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-100 border-b-2 border-yellow-500 p-4 font-mono text-sm">
+      <div className="max-w-7xl mx-auto">
+        <h3 className="font-bold text-yellow-800 mb-2">🔍 Auth Debug Panel</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <span className="text-yellow-700 font-semibold">isLoading:</span>{' '}
+            <span className={isLoading ? 'text-red-600' : 'text-green-600'}>
+              {isLoading ? 'TRUE ⚠️' : 'false ✓'}
+            </span>
+          </div>
+          <div>
+            <span className="text-yellow-700 font-semibold">hasUser:</span>{' '}
+            <span className={user ? 'text-green-600' : 'text-red-600'}>
+              {user ? 'TRUE ✓' : 'FALSE ⚠️'}
+            </span>
+          </div>
+          <div>
+            <span className="text-yellow-700 font-semibold">role:</span>{' '}
+            <span className={role ? 'text-green-600' : 'text-red-600'}>
+              {role || 'NULL ⚠️'}
+            </span>
+          </div>
+          <div>
+            <span className="text-yellow-700 font-semibold">userId:</span>{' '}
+            <span className="text-blue-600">
+              {user?.id?.slice(0, 8) || 'NONE'}...
+            </span>
+          </div>
+        </div>
+        <div className="mt-2 text-xs text-yellow-700">
+          <strong>Cookies:</strong> {cookies.includes('sb-') ? '✓ Session cookie found' : '✗ No session cookie'} 
+          {' | '}
+          {cookies.includes('user-role') ? `✓ Role cookie: ${cookies.match(/user-role=([^;]+)/)?.[1]}` : '✗ No role cookie'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useDashboardData(userId: string | undefined) {
+  const [data, setData] = useState({
+    lostItemsCount: 0,
+    foundItemsCount: 0,
+    matchesCount: 0,
+    claimsCount: 0,
+    recentItems: [],
+    loading: true,
+  });
+
+  useEffect(() => {
+    if (!userId) {
+      setData(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    async function fetchData() {
+      if (!userId) return;
+      
+      // Get lost items count (items reported by user with type LOST)
+      const { count: lostItemsCount } = await supabaseClient
+        .from('items')
+        .select('*', { count: 'exact', head: true })
+        .eq('reporter_id', userId as string)
+        .eq('type', 'LOST')
+        .eq('status', 'OPEN');
+
+      // Get found items count (recent found items on campus)
+      const { count: foundItemsCount } = await supabaseClient
+        .from('items')
+        .select('*', { count: 'exact', head: true })
+        .eq('type', 'FOUND')
+        .eq('status', 'OPEN');
+
+      // Get high-confidence matches count (score > 0.7)
+      const { count: matchesCount } = await supabaseClient
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .gte('score', 0.7)
+        .eq('status', 'PENDING');
+
+      // Get active claims count
+      const { count: claimsCount } = await supabaseClient
+        .from('claims')
+        .select('*', { count: 'exact', head: true })
+        .eq('seeker_id', userId as string)
+        .eq('status', 'PENDING');
+
+      // Get recent activity (last 5 items)
+      const { data: recentItems } = await supabaseClient
+        .from('items')
+        .select('*, categories(name), locations(name)')
+        .eq('reporter_id', userId as string)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setData({
+        lostItemsCount: lostItemsCount || 0,
+        foundItemsCount: foundItemsCount || 0,
+        matchesCount: matchesCount || 0,
+        claimsCount: claimsCount || 0,
+        recentItems: recentItems || [],
+        loading: false,
+      });
+    }
+
+    fetchData();
+  }, [userId]);
+
+  return data;
+}
+
+export default function DashboardPage() {
+  const { user, role, isLoading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<{ full_name: string } | null>(null);
+
+  // Consider authenticated if we have user OR role (role cookie fallback)
+  const isAuthenticated = !!user || !!role;
+
+  useEffect(() => {
+    if (user?.id) {
+      supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    }
+  }, [user?.id]);
+
+  const { 
+    lostItemsCount, 
+    foundItemsCount, 
+    matchesCount, 
+    claimsCount,
+    recentItems,
+    loading: dataLoading
+  } = useDashboardData(user?.id);
+
+  // Loading state - only show if auth is still loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Authentication Required</h2>
+          <p className="text-slate-500 mb-4">Please sign in to view your dashboard.</p>
+          <a
+            href="/login"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-xl hover:bg-[#1d4ed8] transition-colors"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Use profile name, or user metadata, or role-based default
+  const userName = profile?.full_name?.split(' ')[0] 
+    || user?.user_metadata?.full_name?.split(' ')[0]
+    || (role === 'ADMIN' ? 'Admin' : 'Student');
+
+  const stats = [
+    {
+      title: 'Lost Items Reported',
+      value: lostItemsCount,
+      subtitle: '1 currently active',
+      icon: <Search className="w-5 h-5" />,
+      trend: null,
+      color: 'blue',
+    },
+    {
+      title: 'Found Items Nearby',
+      value: foundItemsCount,
+      subtitle: '+3 this week',
+      icon: <PackageOpen className="w-5 h-5" />,
+      trend: 'up',
+      color: 'emerald',
+    },
+    {
+      title: 'Potential Matches',
+      value: matchesCount,
+      subtitle: 'Requires your review',
+      icon: <GitPullRequest className="w-5 h-5" />,
+      trend: null,
+      color: 'amber',
+    },
+    {
+      title: 'Active Claims',
+      value: claimsCount,
+      subtitle: 'Pending admin review',
+      icon: <FileText className="w-5 h-5" />,
+      trend: null,
+      color: 'purple',
+    },
+  ];
+
+  const getColorClasses = (color: string) => {
+    const colors: Record<string, string> = {
+      blue: 'bg-blue-50 text-blue-600',
+      emerald: 'bg-emerald-50 text-emerald-600',
+      amber: 'bg-amber-50 text-amber-600',
+      purple: 'bg-purple-50 text-purple-600',
+    };
+    return colors[color] || colors.blue;
+  };
+
+  return (
+    <>
+      <AuthDebugPanel />
+      <div className="p-8 max-w-7xl mx-auto pt-24">
+        {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Welcome back, {userName}</h1>
+          <p className="text-slate-500 mt-1">Here&apos;s an overview of your lost and found activities.</p>
+        </div>
+        <Link
+          href="/dashboard/report"
+          className="bg-[#2563EB] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#1d4ed8] transition-all flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Report Item
+        </Link>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => (
+          <div 
+            key={index}
+            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getColorClasses(stat.color)}`}>
+                {stat.icon}
+              </div>
+              {stat.trend === 'up' && (
+                <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                  +3 this week
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</p>
+            <p className="text-sm text-slate-500">{stat.title}</p>
+            <p className="text-xs text-slate-400 mt-2">{stat.subtitle}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Recent Activity */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+              <Link href="/dashboard/lost" className="text-sm text-[#2563EB] font-medium hover:underline flex items-center gap-1">
+                View all <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            
+            <div className="p-6">
+              {recentItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <p className="text-slate-500">No recent activity yet</p>
+                  <p className="text-sm text-slate-400 mt-1">Report a lost or found item to get started</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Mock activity items based on the UI */}
+                  <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-900">
+                        <span className="font-semibold">Potential match found</span> for your reported lost item <span className="font-medium">&quot;MacBook Pro 14-inch&quot;</span>.
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">2 hours ago</p>
+                    </div>
+                    <button className="text-sm font-medium text-[#2563EB] hover:underline whitespace-nowrap">
+                      Review Match
+                    </button>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-900">
+                        <span className="font-semibold">Claim approved!</span> You can now pick up your <span className="font-medium">&quot;Hydro Flask Water Bottle&quot;</span> from the central security desk.
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Yesterday at 4:30 PM</p>
+                    </div>
+                    <button className="text-sm font-medium text-[#2563EB] hover:underline whitespace-nowrap">
+                      View Instructions
+                    </button>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-900">
+                        <span className="font-semibold">New report submitted.</span> You reported a lost <span className="font-medium">&quot;MacBook Pro 14-inch&quot;</span> at the Library.
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Oct 12, 2023</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="p-6 border-b border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-900">Quick Actions</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <Link 
+                href="/dashboard/found"
+                className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 hover:border-[#2563EB] hover:shadow-md transition-all group"
+              >
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-[#2563EB] transition-colors">
+                  <Search className="w-6 h-6 text-[#2563EB] group-hover:text-white transition-colors" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900">Browse Found Items</h3>
+                  <p className="text-sm text-slate-500 mt-0.5">Search through items turned in.</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-[#2563EB] transition-colors" />
+              </Link>
+
+              <Link 
+                href="#"
+                className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 hover:border-[#2563EB] hover:shadow-md transition-all group"
+              >
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-[#2563EB] transition-colors">
+                  <MapPin className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900">Drop-off Points</h3>
+                  <p className="text-sm text-slate-500 mt-0.5">Find locations to hand in items.</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-[#2563EB] transition-colors" />
+              </Link>
+
+              <div className="mt-6 p-4 bg-slate-50 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                    <span className="text-sm">🛡️</span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900">Need help?</h4>
+                </div>
+                <p className="text-sm text-slate-500 mb-3">
+                  If you&apos;ve lost something highly valuable, contact Campus Security directly.
+                </p>
+                <a href="#" className="text-sm font-medium text-[#2563EB] hover:underline">
+                  Contact Security
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
