@@ -9,17 +9,15 @@ export async function GET() {
       serviceRoleKeyExists: !!process.env.SUPABASE_SERVICE_ROLE_KEY
     };
 
-    console.log('Environment check:', env);
 
     return NextResponse.json({ 
       message: 'Environment check',
       env
     });
   } catch (error) {
-    console.error('Environment check error:', error);
     return NextResponse.json({ 
       error: 'Environment check failed',
-      details: error?.message
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
