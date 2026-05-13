@@ -61,7 +61,6 @@ export default async function InventoryManagementPage() {
     .select('id, email');
 
   if (profilesError) {
-    console.log('DEBUG profiles error:', profilesError.message);
   }
 
   const profiles = (rawProfiles || []) as DbProfile[];
@@ -83,10 +82,6 @@ export default async function InventoryManagementPage() {
   // Debug: log first item's reporter lookup
   if (items.length > 0) {
     const firstItem = items[0];
-    console.log('DEBUG reporter_id:', firstItem.reporter_id);
-    console.log('DEBUG profiles count:', profiles.length);
-    console.log('DEBUG email found:', reporterEmailMap.get(firstItem.reporter_id));
-    console.log('DEBUG mapped reporter_email:', mappedItems[0].reporter_email);
   }
 
   // Fetch categories for filter

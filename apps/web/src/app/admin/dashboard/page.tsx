@@ -21,10 +21,8 @@ export default async function AdminDashboardPage() {
     
     // Get role from cookie for admin check (more reliable than DB query)
     const roleCookie = cookieStore.get('user-role')?.value;
-    console.log('Admin dashboard - role from cookie:', roleCookie);
 
     if (!roleCookie || roleCookie?.toUpperCase() !== 'ADMIN') {
-      console.log('Admin dashboard - redirecting to /dashboard, role not admin');
       redirect('/dashboard');
     }
 
@@ -32,7 +30,6 @@ export default async function AdminDashboardPage() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
-      console.log('No user session found in server component');
       // Don't redirect - let the middleware handle it or show a loading state
       return (
         <div className="p-8">
@@ -82,7 +79,6 @@ export default async function AdminDashboardPage() {
       successfulRecoveries = claimedResult.count || 0;
       pendingClaims = (claimsResult.data || []) as any[];
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       // Continue with default values
     }
 
@@ -105,7 +101,6 @@ export default async function AdminDashboardPage() {
       />
     );
   } catch (error) {
-    console.error('Admin dashboard error:', error);
     // Return loading state instead of redirecting to prevent loop
     return (
       <div className="p-8">

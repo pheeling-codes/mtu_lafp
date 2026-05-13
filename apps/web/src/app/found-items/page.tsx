@@ -32,11 +32,10 @@ export default async function FoundItemsPage() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching found items:', error);
   }
 
   // Map database columns to client expected format
-  const mappedItems = (items || []).map(item => ({
+  const mappedItems = (items || [] as any[]).map(item => ({
     ...item,
     name: item.title,
     category: item.category_id,

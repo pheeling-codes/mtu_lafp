@@ -19,7 +19,6 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    console.log('Login attempt:', { email, password, selected_role: role });
 
     try {
       // Call server API route (bypasses RLS with service role key)
@@ -29,7 +28,6 @@ export default function LoginPage() {
         selected_role: role,
       };
 
-      console.log('Sending request body:', JSON.stringify(requestBody));
 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -47,7 +45,6 @@ export default function LoginPage() {
 
       // Role validated - redirect to dashboard
       // The server already set the session cookie
-      console.log('Login successful, redirecting to dashboard...');
       window.location.href = role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
