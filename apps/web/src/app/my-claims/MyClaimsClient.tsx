@@ -125,7 +125,6 @@ export default function MyClaimsClient({ initialClaims, userId }: MyClaimsClient
 
   // Real-time subscription
   useEffect(() => {
-    console.log('🔗 Setting up real-time subscription for user:', userId);
     
     const channel = supabaseClient
       .channel('claims_changes')
@@ -138,30 +137,23 @@ export default function MyClaimsClient({ initialClaims, userId }: MyClaimsClient
           filter: `seeker_id=eq.${userId}`
         },
         (payload) => {
-          console.log('📡 Real-time event received:', payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
-            console.log('➕ Adding new claim:', payload.new);
             setClaims(prev => [payload.new as Claim, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            console.log('✏️ Updating claim:', payload.new);
             setClaims(prev => prev.map(c => c.id === payload.new.id ? payload.new as Claim : c));
           } else if (payload.eventType === 'DELETE') {
-            console.log('🗑️ Deleting claim via real-time:', payload.old.id);
             setClaims(prev => {
               const updated = prev.filter(c => c.id !== payload.old.id);
-              console.log('📊 Claims after real-time delete:', updated.length);
               return updated;
             });
           }
         }
       )
       .subscribe((status) => {
-        console.log('📡 Subscription status:', status);
       });
 
     return () => {
-      console.log('🔌 Cleaning up real-time subscription');
       supabaseClient.removeChannel(channel);
     };
   }, [userId]);
@@ -176,7 +168,6 @@ export default function MyClaimsClient({ initialClaims, userId }: MyClaimsClient
     }
 
     try {
-      console.log('🗑️ Attempting to delete claim:', claimId);
       
       const { error } = await supabaseClient
         .from('claims')
@@ -184,17 +175,14 @@ export default function MyClaimsClient({ initialClaims, userId }: MyClaimsClient
         .eq('id', claimId);
 
       if (error) {
-        console.error('❌ Error deleting claim:', error);
         alert('Failed to delete claim. Please try again.');
         return;
       }
 
-      console.log('✅ Claim successfully deleted from database');
       
       // Remove from local state immediately
       setClaims(prev => {
         const updated = prev.filter(c => c.id !== claimId);
-        console.log('📊 Updated local claims state:', updated.length, 'items');
         return updated;
       });
 
@@ -204,7 +192,6 @@ export default function MyClaimsClient({ initialClaims, userId }: MyClaimsClient
       // Show success message
       alert('Claim deleted successfully.');
     } catch (err) {
-      console.error('❌ Error deleting claim:', err);
       alert('Failed to delete claim. Please try again.');
     }
   };

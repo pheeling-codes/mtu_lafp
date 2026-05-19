@@ -43,14 +43,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
-      console.log('LOGIN API: Auth error:', authError?.message);
       return NextResponse.json(
         { error: authError?.message || 'Authentication failed' },
         { status: 401 }
       );
     }
 
-    console.log('LOGIN API: Sign in successful, user:', authData.user.id);
 
     // Step 2: Fetch profile using service role client (bypasses RLS)
     const { data, error: profileError } = await supabaseAdmin
@@ -62,7 +60,6 @@ export async function POST(request: NextRequest) {
     const profile = data as any;
 
     if (profileError || !profile) {
-      console.error('No profile found for user ID:', authData.user.id, 'Error:', profileError?.message);
       await supabase.auth.signOut();
       return NextResponse.json(
         { error: 'Profile not found. Please complete registration or contact support.' },
@@ -70,11 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Profile found:', profile);
 
     // === STRICT ROLE MATCHING (Credential Gate) ===
     if (profile.role !== selected_role) {
-      console.warn(`Role mismatch: selected ${selected_role} but database has ${profile.role}`);
       
       // Sign out the user immediately to revoke the session cookies
       await supabase.auth.signOut();
@@ -165,7 +160,6 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Login API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

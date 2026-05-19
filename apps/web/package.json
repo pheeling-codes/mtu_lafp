@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "prisma generate --schema=../../../packages/database/schema.prisma && next build",
+    "build": "prisma generate --schema=./prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   },
   "dependencies": {
     "@mtu/shared-types": "workspace:*",
