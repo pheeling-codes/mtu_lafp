@@ -5,8 +5,8 @@ import MyClaimsClient from './MyClaimsClient';
 export default async function MyClaimsPage() {
   const supabase = await createServerClient();
   
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (!user || userError) {
     redirect('/login');
   }
 
@@ -17,7 +17,7 @@ export default async function MyClaimsPage() {
       *,
       item:items(*)
     `)
-    .eq('seeker_id', session.user.id)
+    .eq('seeker_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -35,5 +35,5 @@ export default async function MyClaimsPage() {
     } : null
   }));
 
-  return <MyClaimsClient initialClaims={mappedClaims} userId={session.user.id} />;
+  return <MyClaimsClient initialClaims={mappedClaims} userId={user.id} />;
 }
