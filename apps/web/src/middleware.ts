@@ -3,22 +3,28 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // Service role client for server-side profile lookups
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
 
 // Simple in-memory cache for profile lookups (prevents redundant DB calls if metadata fails)
 const profileCache = new Map<string, { role: string; timestamp: number }>();
 const CACHE_TTL = 60000; // 1 minute
 
 async function getUserRole(userId: string): Promise<string | null> {
+  if (!supabaseAdmin) return null;
+
   const cached = profileCache.get(userId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.role;

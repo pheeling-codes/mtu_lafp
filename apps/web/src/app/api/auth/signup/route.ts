@@ -4,26 +4,40 @@ import { NextRequest, NextResponse } from 'next/server';
 // Debug env vars
 
 // Service role client for admin operations (bypasses RLS)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let serviceClient: ReturnType<typeof createClient> | null = null;
+let cachedUrl: string | undefined;
+let cachedKey: string | undefined;
 
-if (!supabaseUrl || !serviceKey) {
-  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-}
+function initServiceClient() {
+  if (serviceClient) return { client: serviceClient, url: cachedUrl, key: cachedKey };
 
-const serviceClient = createClient(
-  supabaseUrl,
-  serviceKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   }
-);
+
+  cachedUrl = supabaseUrl;
+  cachedKey = serviceKey;
+
+  serviceClient = createClient(
+    supabaseUrl,
+    serviceKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+
+  return { client: serviceClient, url: supabaseUrl, key: serviceKey };
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const { client, url: supabaseUrl, key: serviceKey } = initServiceClient();
     const { email, password, fullName, matricNumber, role } = await request.json();
 
     // Validate required fields
@@ -42,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email is already registered
-    const { data: existingEmail } = await serviceClient
+    const { data: existingEmail } = await client
       .from('profiles')
       .select('email')
       .eq('email', email.toLowerCase())
@@ -57,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Check if matric number is already in use (for students)
     if (role === 'STUDENT' && matricNumber) {
-      const { data: existingProfile } = await serviceClient
+      const { data: existingProfile } = await client
         .from('profiles')
         .select('matric_number')
         .eq('matric_number', matricNumber.trim())
@@ -72,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Create auth user with service role
-    const { data: authData, error: authError } = await serviceClient.auth.admin.createUser({
+    const { data: authData, error: authError } = await client.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -113,7 +127,7 @@ export async function POST(request: NextRequest) {
       profileData.matric_number = matricNumber.trim();
     }
 
-    const { data: profileResult, error: profileError } = await serviceClient
+    const { data: profileResult, error: profileError } = await client
       .from('profiles')
       .insert(profileData)
       .select()
@@ -123,7 +137,7 @@ export async function POST(request: NextRequest) {
       
       // Attempt to clean up the auth user since profile creation failed
       try {
-        await serviceClient.auth.admin.deleteUser(authData.user.id);
+        await client.auth.admin.deleteUser(authData.user.id);
       } catch (cleanupError) {
       }
 
@@ -185,8 +199,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Signup error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: process.env.NODE_ENV === 'development' ? message : 'Internal server error' },
       { status: 500 }
     );
   }

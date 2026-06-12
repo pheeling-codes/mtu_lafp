@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "pnpm db:setup && turbo run dev",
+    "db:setup": "turbo run setup --filter=@mtu/database",
     "lint": "turbo run lint",
     "clean": "turbo run clean"
   },

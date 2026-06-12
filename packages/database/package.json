@@ -9,8 +9,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "migrate:dev": "prisma migrate dev",
-    "db:push": "prisma db push",
+    "migrate:dev": "node migrate.js --name create_profiles_table",
+    "db:push": "node push.js",
+    "setup": "node setup.js",
     "studio": "prisma studio"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@mtu/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
+    "dotenv": "^16.4.5",
     "prisma": "^5.10.0",
     "typescript": "^5.6.0"
   }

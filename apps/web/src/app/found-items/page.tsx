@@ -6,8 +6,8 @@ export default async function FoundItemsPage() {
   const supabase = await createServerClient();
   
   // Check authentication
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (!user || userError) {
     redirect('/login');
   }
 
@@ -42,5 +42,5 @@ export default async function FoundItemsPage() {
     location: item.location_id,
   }));
 
-  return <FoundItemsClient initialItems={mappedItems} userId={session.user.id} />;
+  return <FoundItemsClient initialItems={mappedItems} userId={user.id} />;
 }

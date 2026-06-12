@@ -5,8 +5,8 @@ import MatchesClient from './MatchesClient';
 export default async function MatchesPage() {
   const supabase = await createServerClient();
   
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (!user || userError) {
     redirect('/login');
   }
 
@@ -19,12 +19,12 @@ export default async function MatchesPage() {
       lost_item:items!matches_lost_item_id_fkey(*),
       found_item:items!matches_found_item_id_fkey(*)
     `)
-    .eq('lost_item.reporter_id', session.user.id)
+    .eq('lost_item.reporter_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching matches:', error);
   }
 
-  return <MatchesClient initialMatches={matches || []} userId={session.user.id} />;
+  return <MatchesClient initialMatches={matches || []} userId={user.id} />;
 }

@@ -2,7 +2,6 @@
   "extends": "@mtu/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "ES2020",

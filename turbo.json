@@ -27,7 +27,16 @@
         "^lint"
       ]
     },
+    "setup": {
+      "cache": false,
+      "outputs": ["dist/**", "node_modules/.prisma/**"],
+      "env": [
+        "DATABASE_URL",
+        "DIRECT_URL"
+      ]
+    },
     "dev": {
+      "dependsOn": ["^setup"],
       "cache": false,
       "persistent": true
     },
