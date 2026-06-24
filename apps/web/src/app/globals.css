@@ -22,6 +22,10 @@
     color: var(--foreground);
     @apply font-sans antialiased;
   }
+
+  input, textarea, select {
+    @apply text-slate-900 dark:text-slate-100;
+  }
 }
 
 @layer utilities {
