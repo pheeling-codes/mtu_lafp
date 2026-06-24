@@ -154,14 +154,13 @@ export default function AdminClaimsClient({ initialClaims }: AdminClaimsClientPr
     setIsSubmitting(true);
     setShowApproveModal(false);
     try {
-      const { data, error } = await supabaseClient
-        .from('claims')
+      const { data, error } = await (supabaseClient.from('claims') as any)
         .update({
           status: 'approved',
           recovery_instructions: recoveryInstructions.trim(),
           admin_notes: adminNotes.trim() || null,
           reviewed_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', selectedClaim.id);
 
       if (error) {
@@ -196,13 +195,12 @@ export default function AdminClaimsClient({ initialClaims }: AdminClaimsClientPr
     setIsSubmitting(true);
     setShowRejectModal(false);
     try {
-      const { data, error } = await supabaseClient
-        .from('claims')
+      const { data, error } = await (supabaseClient.from('claims') as any)
         .update({
           status: 'rejected',
           admin_notes: adminNotes.trim() || null,
           reviewed_at: new Date().toISOString()
-        } as any)
+        })
         .eq('id', selectedClaim.id);
 
       if (error) {
