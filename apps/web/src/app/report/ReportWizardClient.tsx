@@ -335,7 +335,7 @@ export default function ReportWizardClient({ userId }: ReportWizardClientProps) 
                     value={formData.name}
                     onChange={(e) => updateForm('name', e.target.value)}
                     placeholder="e.g., Black Leather Wallet"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all"
                   />
                 </div>
 
@@ -348,7 +348,7 @@ export default function ReportWizardClient({ userId }: ReportWizardClientProps) 
                     onChange={(e) => updateForm('description', e.target.value)}
                     placeholder="Add any distinctive features, brand names, or identifying marks..."
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all resize-none"
                   />
                 </div>
 
@@ -401,7 +401,7 @@ export default function ReportWizardClient({ userId }: ReportWizardClientProps) 
                     <select
                       value={formData.location}
                       onChange={(e) => updateForm('location', e.target.value)}
-                      className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none appearance-none bg-white cursor-pointer transition-all"
+                      className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none appearance-none bg-white cursor-pointer transition-all"
                     >
                       <option value="">Select a campus location...</option>
                       {campusLocations.map((location) => (
@@ -422,7 +422,7 @@ export default function ReportWizardClient({ userId }: ReportWizardClientProps) 
                       type="date"
                       value={formData.date}
                       onChange={(e) => updateForm('date', e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] outline-none transition-all"
                     />
                   </div>
                 </div>

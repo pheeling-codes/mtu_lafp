@@ -285,7 +285,7 @@ export default function VerifyClaimClient({ item, userId }: VerifyClaimClientPro
               value={hiddenDetails}
               onChange={(e) => setHiddenDetails(e.target.value)}
               placeholder="Example: There is a small dent on the bottom left corner, and the lock screen wallpaper is a picture of a golden retriever..."
-              className="w-full h-32 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none text-sm"
+              className="w-full h-32 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none text-sm text-slate-900"
             />
           </div>
 

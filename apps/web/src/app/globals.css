@@ -43,17 +43,4 @@
   }
 }
 
-/* 
-  FORCE NATIVE TEXT COLORS OUTSIDE OF TAILWIND 
-  This guarantees standard input fields have deep legible text
-  regardless of nested component inheritance.
-*/
-input, textarea, select, .editable-field {
-  color: #0f172a !important; /* text-slate-900 */
-}
 
-@media (prefers-color-scheme: dark) {
-  input, textarea, select, .editable-field {
-    color: #f8fafc !important; /* text-slate-50 */
-  }
-}
