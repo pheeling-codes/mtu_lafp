@@ -24,7 +24,14 @@
   }
 
   input, textarea, select {
-    @apply text-slate-900 dark:text-slate-100;
+    @apply text-slate-900;
+    color: #0f172a !important; /* Tailwind slate-900 */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    input, textarea, select {
+      color: #f8fafc !important; /* Tailwind slate-50 */
+    }
   }
 }
 
