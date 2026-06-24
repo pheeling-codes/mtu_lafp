@@ -37,7 +37,7 @@ export default function Home() {
         setHealth(prev => ({
           ...prev,
           api: response.status === 'ok' ? 'connected' : 'error',
-          apiMessage: response.database === 'connected' 
+          apiMessage: (response as any).database === 'connected' 
             ? 'API + Database connected' 
             : 'API connected, Database issue',
         }));
