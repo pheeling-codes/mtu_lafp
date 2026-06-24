@@ -34,12 +34,12 @@ export default async function ClaimDetailPage({ params }: ClaimDetailPageProps) 
   
   // Map database columns to client expected format
   const mappedClaim = {
-    ...claim,
-    item: claim.item ? {
-      ...claim.item,
-      name: claim.item.title,
-      category: claim.item.category_id,
-      location: claim.item.location_id,
+    ...(claim as any),
+    item: (claim as any)?.item ? {
+      ...((claim as any).item),
+      name: (claim as any).item.title,
+      category: (claim as any).item.category_id,
+      location: (claim as any).item.location_id,
     } : null
   };
 
