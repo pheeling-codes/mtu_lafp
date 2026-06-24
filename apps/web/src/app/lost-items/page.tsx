@@ -32,10 +32,10 @@ export default async function LostItemsPage() {
 
   // Map database columns to client expected format
   const mappedItems = (lostItems || []).map(item => ({
-    ...item,
-    name: item.title,
-    category: item.category_id,
-    location: item.location_id,
+    ...(item as any),
+    name: (item as any)?.title,
+    category: (item as any)?.category_id,
+    location: (item as any)?.location_id,
   }));
 
   return <LostItemsClient initialItems={mappedItems} userId={user.id} />;
