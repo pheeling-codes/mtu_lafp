@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { healthCheck } from '@/lib/api';
 import { supabaseClient } from '@/utils/supabaseClient';
 import { 
@@ -107,24 +108,24 @@ export default function Home() {
             </span>
           </div>
           <nav className="flex items-center gap-6">
-            <button 
-              onClick={() => router.push('/lost-items')}
+            <Link 
+              href="/lost-items"
               className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors"
             >
               Report Lost
-            </button>
-            <button 
-              onClick={() => router.push('/found-items')}
+            </Link>
+            <Link 
+              href="/found-items"
               className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors"
             >
               Report Found
-            </button>
-            <button 
-              onClick={() => router.push('/login')}
+            </Link>
+            <Link 
+              href="/login"
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               Sign In
-            </button>
+            </Link>
           </nav>
         </div>
       </header>
@@ -141,19 +142,19 @@ export default function Home() {
             Connecting students and staff to reunite lost items with their owners.
           </p>
           <div className="flex gap-4 justify-center">
-            <button 
-              onClick={() => router.push('/found-items')}
+            <Link 
+              href="/found-items"
               className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-all flex items-center gap-2"
             >
               <Search className="w-5 h-5" />
               Search Items
-            </button>
-            <button 
-              onClick={() => router.push('/report')}
+            </Link>
+            <Link 
+              href="/report"
               className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-medium border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all"
             >
               Report Item
-            </button>
+            </Link>
           </div>
         </div>
 
