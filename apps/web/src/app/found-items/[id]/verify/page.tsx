@@ -31,10 +31,10 @@ export default async function VerifyClaimPage({ params }: VerifyClaimPageProps) 
 
   // Map database columns to client expected format
   const mappedItem = {
-    ...item,
-    name: item.title,
-    category: item.category_id,
-    location: item.location_id,
+    ...(item as any),
+    name: (item as any)?.title,
+    category: (item as any)?.category_id,
+    location: (item as any)?.location_id,
   };
 
   return <VerifyClaimClient item={mappedItem} userId={session.user.id} />;
