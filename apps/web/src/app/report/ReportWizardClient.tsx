@@ -138,15 +138,15 @@ export default function ReportWizardClient({ userId }: ReportWizardClientProps) 
         image_url: imageUrl,
       });
 
-      const { error: insertError } = await supabaseClient.from('items').insert({
+      const { error: insertError } = await (supabaseClient.from('items') as any).insert({
         reporter_id: userId,
         type: formData.type,
         category_id: formData.category,
-        title: formData.name,
-        description: formData.description,
-        description_public: formData.description,
+        title: formData.name.trim(),
+        description: formData.description.trim(),
+        description_public: formData.description.trim() || '',
         location_id: formData.location,
-        date_lost: formData.date || null,
+        date_lost: formData.date ? new Date(formData.date).toISOString() : null,
         image_url: imageUrl,
         status: 'active',
         updated_at: new Date().toISOString(),
