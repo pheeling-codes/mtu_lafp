@@ -39,8 +39,8 @@ async function getUserRole(userId: string): Promise<string | null> {
 
     if (error || !data) return null;
 
-    profileCache.set(userId, { role: data.role, timestamp: Date.now() });
-    return data.role;
+    profileCache.set(userId, { role: (data as any).role, timestamp: Date.now() });
+    return (data as any).role;
   } catch (err) {
     return null;
   }
