@@ -161,7 +161,7 @@ export default function AdminClaimsClient({ initialClaims }: AdminClaimsClientPr
           recovery_instructions: recoveryInstructions.trim(),
           admin_notes: adminNotes.trim() || null,
           reviewed_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', selectedClaim.id);
 
       if (error) {
@@ -202,7 +202,7 @@ export default function AdminClaimsClient({ initialClaims }: AdminClaimsClientPr
           status: 'rejected',
           admin_notes: adminNotes.trim() || null,
           reviewed_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', selectedClaim.id);
 
       if (error) {
